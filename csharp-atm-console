@@ -1,1 +1,181 @@
+using System;
+using System.Text;
 
+public class Program
+{
+    const string CorrectPin = "1234";
+    const int MaxAttempts = 3;
+
+    // Returns the English or Persian text based on the chosen language
+    static string T(int lang, string en, string fa)
+    {
+        return lang == 1 ? en : fa;
+    }
+
+    // Keeps asking until the user enters a valid integer
+    static int ReadInt(string prompt, int lang)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            string input = Console.ReadLine();
+
+            if (int.TryParse(input, out int value))
+            {
+                return value;
+            }
+
+            Console.WriteLine(T(lang,
+                "Invalid input. Please enter a number.",
+                "ورودی نامعتبر است. لطفاً عدد وارد کنید."));
+        }
+    }
+
+    // Keeps asking until the user enters a positive amount
+    static decimal ReadAmount(int lang)
+    {
+        while (true)
+        {
+            Console.Write(T(lang, "Enter amount: ", "مبلغ را وارد کنید: "));
+            string input = Console.ReadLine();
+
+            if (decimal.TryParse(input, out decimal value) && value > 0)
+            {
+                return value;
+            }
+
+            Console.WriteLine(T(lang,
+                "Amount must be a positive number.",
+                "مبلغ باید یک عدد مثبت باشد."));
+        }
+    }
+
+    static void ShowMenu(int lang)
+    {
+        Console.WriteLine();
+        Console.WriteLine(T(lang, "1. Balance", "1. موجودی"));
+        Console.WriteLine(T(lang, "2. Withdraw", "2. برداشت"));
+        Console.WriteLine(T(lang, "3. Deposit", "3. واریز"));
+        Console.WriteLine(T(lang, "4. Transfer", "4. انتقال وجه"));
+        Console.WriteLine(T(lang, "5. Exit", "5. خروج"));
+    }
+
+    public static void Main()
+    {
+        Console.OutputEncoding = Encoding.UTF8;
+        Console.InputEncoding = Encoding.UTF8;
+
+        decimal balance = 1000000m;
+
+        // Language selection
+        Console.WriteLine("===== ATM =====");
+        Console.WriteLine("1. English");
+        Console.WriteLine("2. فارسی");
+
+        int language;
+        do
+        {
+            language = ReadInt("Choose Language / انتخاب زبان: ", 1);
+        } while (language != 1 && language != 2);
+
+        // PIN check with limited attempts
+        bool loggedIn = false;
+        for (int attempt = 1; attempt <= MaxAttempts; attempt++)
+        {
+            Console.Write(T(language, "Enter PIN: ", "رمز را وارد کنید: "));
+            string enteredPin = Console.ReadLine();
+
+            if (enteredPin == CorrectPin)
+            {
+                loggedIn = true;
+                break;
+            }
+
+            int attemptsLeft = MaxAttempts - attempt;
+            if (attemptsLeft > 0)
+            {
+                Console.WriteLine(T(language,
+                    "Incorrect PIN! Attempts left: " + attemptsLeft,
+                    "رمز اشتباه است! تعداد تلاش باقی‌مانده: " + attemptsLeft));
+            }
+        }
+
+        if (!loggedIn)
+        {
+            Console.WriteLine(T(language,
+                "Too many wrong attempts. Card blocked.",
+                "تعداد تلاش‌های اشتباه زیاد بود. کارت مسدود شد."));
+            return;
+        }
+
+        Console.WriteLine(T(language, "Login Successful!", "ورود موفقیت‌آمیز بود"));
+
+        // Main menu loop
+        bool running = true;
+        while (running)
+        {
+            ShowMenu(language);
+            int choice = ReadInt(T(language, "Choose: ", "انتخاب کنید: "), language);
+
+            switch (choice)
+            {
+                case 1:
+                    Console.WriteLine(T(language, "Balance: ", "موجودی شما: ") + balance.ToString("N0"));
+                    break;
+
+                case 2:
+                    decimal withdrawAmount = ReadAmount(language);
+                    if (withdrawAmount <= balance)
+                    {
+                        balance -= withdrawAmount;
+                        Console.WriteLine(T(language, "New balance: ", "موجودی جدید شما: ") + balance.ToString("N0"));
+                    }
+                    else
+                    {
+                        Console.WriteLine(T(language, "Insufficient balance!", "موجودی کافی نمی‌باشد"));
+                    }
+                    break;
+
+                case 3:
+                    decimal depositAmount = ReadAmount(language);
+                    balance += depositAmount;
+                    Console.WriteLine(T(language, "New balance: ", "موجودی جدید شما: ") + balance.ToString("N0"));
+                    break;
+
+                case 4:
+                    Console.Write(T(language, "Enter destination account number: ", "شماره حساب مقصد را وارد کنید: "));
+                    string account = Console.ReadLine();
+
+                    if (string.IsNullOrWhiteSpace(account))
+                    {
+                        Console.WriteLine(T(language, "Invalid account number.", "شماره حساب نامعتبر است."));
+                        break;
+                    }
+
+                    decimal transferAmount = ReadAmount(language);
+                    if (transferAmount <= balance)
+                    {
+                        balance -= transferAmount;
+                        Console.WriteLine(T(language,
+                            "Transferred " + transferAmount.ToString("N0") + " to " + account.Trim(),
+                            transferAmount.ToString("N0") + " به حساب " + account.Trim() + " منتقل شد"));
+                        Console.WriteLine(T(language, "New balance: ", "موجودی جدید شما: ") + balance.ToString("N0"));
+                    }
+                    else
+                    {
+                        Console.WriteLine(T(language, "Insufficient balance!", "موجودی کافی نمی‌باشد"));
+                    }
+                    break;
+
+                case 5:
+                    Console.WriteLine(T(language, "Goodbye!", "خدانگهدار!"));
+                    running = false;
+                    break;
+
+                default:
+                    Console.WriteLine(T(language, "Invalid choice. Choose 1 to 5.", "گزینه نامعتبر است. عدد 1 تا 5 را وارد کنید."));
+                    break;
+            }
+        }
+    }
+}
